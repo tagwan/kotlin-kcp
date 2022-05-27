@@ -21,6 +21,14 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.slf4j:slf4j-api:1.7.33")
+    implementation("org.slf4j:slf4j-log4j12:1.7.33")
+
+    implementation("io.netty:netty-all:4.1.77.Final")
+    implementation("com.typesafe.akka:akka-actor_3:2.6.19")
+
     testImplementation(kotlin("test"))
 }
 
