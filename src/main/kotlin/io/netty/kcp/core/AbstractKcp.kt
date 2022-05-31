@@ -286,8 +286,8 @@ abstract class AbstractKcp(
         } else 0
     }
 
-    override fun noDelay(nodelay: Int, interval: Int, resend: Int, nc: Int): Int {
-        var interval = interval
+    override fun noDelay(nodelay: Int, itv: Int, resend: Int, nc: Int): Int {
+        var interval = itv
         if (nodelay >= 0) {
             this.nodelay = nodelay
             rx_minrto = if (nodelay != 0) {
@@ -323,8 +323,8 @@ abstract class AbstractKcp(
         return 0
     }
 
-    override fun interval(interval: Int): Int {
-        var interval = interval
+    override fun interval(itv: Int): Int {
+        var interval = itv
         if (interval > 5000) {
             interval = 5000
         } else if (interval < 10) {
@@ -341,9 +341,7 @@ abstract class AbstractKcp(
         val buf = PooledByteBufAllocator.DEFAULT.buffer((mtu + IKCP_OVERHEAD) * 3)
         this.mtu = mtu
         mss = mtu - IKCP_OVERHEAD
-        if (buffer != null) {
-            buffer!!.release()
-        }
+        buffer.release()
         buffer = buf
         return 0
     }
@@ -363,8 +361,8 @@ abstract class AbstractKcp(
      * 释放内存
      */
     fun release() {
-        if (buffer!!.refCnt() > 0) {
-            buffer!!.release(buffer!!.refCnt())
+        if (buffer.refCnt() > 0) {
+            buffer.release(buffer.refCnt())
         }
         for (seg in rcv_buf) {
             seg.release()
