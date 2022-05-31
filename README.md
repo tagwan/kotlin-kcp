@@ -1,3 +1,5 @@
+![Alt](https://repobeats.axiom.co/api/embed/5de133ecad8e3069a82bfa042b6fab6104ea141e.svg "Repobeats analytics image")
+
 <h1 align="center">KCP implemented by kotlin</h1>
 
 [![Github](https://img.shields.io/badge/GitHub-white.svg?style=flat-square&logo=github&logoColor=181717)](https://github.com/tagwan/kotlin-kcp)
