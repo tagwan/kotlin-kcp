@@ -9,6 +9,7 @@ import io.netty.channel.epoll.EpollDatagramChannel
 import io.netty.channel.epoll.EpollEventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioDatagramChannel
+import org.slf4j.LoggerFactory
 import java.net.InetSocketAddress
 
 /**
@@ -23,6 +24,7 @@ class SimpleUdpServer(
     private val epoll = Epoll.isAvailable()
     private var channel: Channel? = null
     private var localAddress: InetSocketAddress? = null
+    private val logger = LoggerFactory.getLogger(SimpleUdpServer::class.java)
 
     init {
         require(port in 1..65535) { "port" }
@@ -39,6 +41,7 @@ class SimpleUdpServer(
             bootstrap.option(EpollChannelOption.SO_REUSEPORT, true)
         }
 
+        logger.info("udp server start at port:{}", port)
 
         // bind
         val channelFuture = bootstrap.bind(port)
