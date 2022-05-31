@@ -27,7 +27,7 @@ class SimpleUdpServer(
     private val logger = LoggerFactory.getLogger(SimpleUdpServer::class.java)
 
     init {
-        require(port in 1..65535) { "port" }
+        require(port in 0..0xFFFF) { "port out of range:$port" }
     }
 
     override fun start() {

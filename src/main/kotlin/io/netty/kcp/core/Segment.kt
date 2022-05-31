@@ -7,7 +7,7 @@ import io.netty.buffer.PooledByteBufAllocator
  * @author jdg
  */
 class Segment(size: Int): java.io.Serializable {
-    var conv = 0
+    var conv = 0        // conv为一个表示会话编号的整数, 通信双方需保证 conv相同
     var cmd: Byte = 0   // cmd，用来获取区分分片的作用
     var frg = 0         // 用户数据可能会被分成多个KCP包发送，frag标识segment分片ID（在message中的索引，由大到小，0表示最后一个分片）
     var wnd = 0         // 剩余接收窗口大小（接收窗口大小-接收队列大小），发送方的发送窗口不能超过接收方给出的数值
