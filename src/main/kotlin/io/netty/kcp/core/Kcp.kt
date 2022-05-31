@@ -29,7 +29,7 @@ import io.netty.buffer.ByteBuf
  *
  * @data 2022/5/27 18:40
  */
-interface Kcp: KcpGetter, KcpSetter {
+interface Kcp: IKcpGetter, IKcpSetter {
 
     /**
      * user/upper level

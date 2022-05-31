@@ -5,7 +5,7 @@ package io.netty.kcp.core
  *
  * @data 2022/5/27 18:41
  */
-open interface KcpSetter {
+interface IKcpSetter {
     /**
      * fastest: ikcp_nodelay(kcp, 1, 20, 2, 1)
      * nodelay: 0:disable(default), 1:enable

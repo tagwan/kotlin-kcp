@@ -5,7 +5,7 @@ package io.netty.kcp.core
  *
  * @data 2022/5/27 18:41
  */
-interface KcpGetter {
+interface IKcpGetter {
     //---------------------------------------------------------------------
     // Determine when should you invoke ikcp_update:
     // returns when you should invoke ikcp_update in millisec, if there
