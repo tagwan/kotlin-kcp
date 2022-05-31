@@ -6,7 +6,7 @@ import io.netty.buffer.PooledByteBufAllocator
 /**
  * @author jdg
  */
-class Segment(size: Int) {
+class Segment(size: Int): java.io.Serializable {
     var conv = 0
     var cmd: Byte = 0   // cmd，用来获取区分分片的作用
     var frg = 0         // 用户数据可能会被分成多个KCP包发送，frag标识segment分片ID（在message中的索引，由大到小，0表示最后一个分片）
@@ -38,7 +38,7 @@ class Segment(size: Int) {
         buf.writeIntLE(ts)
         buf.writeIntLE(sn)
         buf.writeIntLE(una)
-        buf.writeIntLE(if (data == null) 0 else data!!.readableBytes())
+        buf.writeIntLE(data?.readableBytes() ?: 0)
         return buf.writerIndex() - off
     }
 

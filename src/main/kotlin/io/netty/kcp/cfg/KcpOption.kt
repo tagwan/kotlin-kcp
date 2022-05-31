@@ -7,16 +7,17 @@ import io.netty.util.ConstantPool
 /**
  * @author jdg
  */
-class KcpOption<T> private constructor(id: Int, name: String) :
-    AbstractConstant<KcpOption<T>?>(id, name) {
-    @Deprecated("")
-    protected constructor(name: String) : this(pool.nextId(), name)
+class KcpOption<T> private constructor(
+    id: Int,
+    name: String
+) : AbstractConstant<KcpOption<T>>(id, name) {
 
     fun validate(value: T) {
         requireNotNull(value)
     }
 
     companion object {
+
         private val pool: ConstantPool<KcpOption<Any>> = object : ConstantPool<KcpOption<Any>>() {
             override fun newConstant(id: Int, name: String): KcpOption<Any> {
                 return KcpOption(id, name)

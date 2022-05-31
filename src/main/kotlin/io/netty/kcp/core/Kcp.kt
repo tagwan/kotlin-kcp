@@ -45,7 +45,7 @@ interface Kcp: IKcpGetter, IKcpSetter {
      * @param buffer
      * @return below zero for error
      */
-    fun send(buffer: ByteBuf?): Int
+    fun send(buffer: ByteBuf): Int
 
     /**
      * update state (call it repeatedly, every 10ms-100ms), or you can ask

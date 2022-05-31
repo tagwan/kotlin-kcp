@@ -6,13 +6,13 @@ const val IKCP_RTO_MIN = 100 // normal min rto
 
 const val IKCP_RTO_DEF = 200
 const val IKCP_RTO_MAX = 60000
-const val IKCP_CMD_PUSH = 81 // cmd: push data
+const val IKCP_CMD_PUSH: Byte = 81 // cmd: push data
 
-const val IKCP_CMD_ACK = 82 // cmd: ack
+const val IKCP_CMD_ACK: Byte = 82 // cmd: ack
 
-const val IKCP_CMD_WASK = 83 // cmd: window probe (ask)
+const val IKCP_CMD_WASK: Byte = 83 // cmd: window probe (ask)
 
-const val IKCP_CMD_WINS = 84 // cmd: window size (tell)
+const val IKCP_CMD_WINS: Byte = 84 // cmd: window size (tell)
 
 const val IKCP_ASK_SEND = 1 // need to send IKCP_CMD_WASK
 
