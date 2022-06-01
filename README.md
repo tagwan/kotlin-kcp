@@ -9,7 +9,35 @@
 
 <div align="center">
 
-KCP是一个快速可靠协议，能以比 TCP 浪费 10%-20% 的带宽的代价，换取平均延迟降低 30%-40%，且最大延迟降低三倍的传输效果。纯算法实现，并不负责底层协议（如UDP）的收发，需要使用者自己定义下层数据包的发送方式，以 callback的方式提供给 KCP。 连时钟都需要外部传递进来，内部不会有任何一次系统调用。
-
-
+This implementation uses [Netty](https://github.com/netty/netty),
+offering the full feature set of the transport protocol, while providing
+room for extension with any plugins or custom behavior.
 </div>
+
+
+## Features
+* Recylable objects:
+    * Heavily used objects are recycled.
+    * Reduces GC pressure.
+    * Instrumented with Netty leak detection.
+* Strict Netty patterns:
+    * Uses Bootstrap and ServerBootstrap pattern.
+    * Signals backpressure using Channel writability.
+    * Uses Netty ChannelOptions for channel config.
+    * Follows the normal *bind* and *connect* patterns.
+    * Accurate promise responses for *write*, *connect* and others.
+* 0-copy buffer interactions:
+    * Retained buffer references throughout.
+    * Composite buffers used for encapsulation and defragmentation.
+* Easy-to-use data streaming interface:
+    * Configurable packet ID used for raw ByteBuf writing and reading.
+    * Extensible to allow for multiple packet ID and channel configurations.
+    * True to Netty form, the pipeline can be modified and augmented as needed.
+* Advanced flow control
+    * Back pressure signals useful for buffer limiting when client is overloaded.
+    * Pending frame-set limits reduce unnecessary resends during high transfer rates.
+    * Resend priority based on frame sequence so you get older packets faster.
+* Automated flush driver
+    * Recommended to write to pipeline with no flush.
+    * Flush cycles condense outbound data for best use of MTU.
+  

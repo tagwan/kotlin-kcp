@@ -27,8 +27,8 @@ dependencies {
     implementation("org.slf4j:slf4j-log4j12:1.7.33")
 
     implementation("io.netty:netty-all:4.1.77.Final")
-    implementation("com.typesafe.akka:akka-actor_3:2.6.19")
-
+    implementation("it.unimi.dsi:fastutil:8.2.2")
+    implementation("org.apache.commons:commons-math3:3.6.1")
     testImplementation(kotlin("test"))
 }
 
