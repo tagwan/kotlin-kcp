@@ -11,7 +11,7 @@ class UnconnectedPing : SimplePacket(), Packet {
 
     override fun encode(buf: ByteBuf) {
         buf.writeLong(clientTime)
-        magic!!.write(buf)
+        magic?.write(buf)
         buf.writeLong(clientId)
     }
 

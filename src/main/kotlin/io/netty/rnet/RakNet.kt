@@ -30,7 +30,7 @@ object RakNet {
     }
 
     fun metrics(ctx: ChannelHandlerContext): MetricsLogger {
-        return config(ctx).metrics!!
+        return config(ctx).metrics
     }
 
     /**
@@ -94,8 +94,8 @@ object RakNet {
     }
 
     interface Codec {
-        fun encode(packet: FramedPacket?, alloc: ByteBufAllocator?): FrameData?
-        fun encode(packet: Packet?, out: ByteBuf?)
+        fun encode(packet: FramedPacket, alloc: ByteBufAllocator): FrameData
+        fun encode(packet: Packet, out: ByteBuf)
         fun produceEncoded(packet: Packet?, alloc: ByteBufAllocator?): ByteBuf?
         fun decode(buf: ByteBuf?): Packet?
         fun decode(data: FrameData?): FramedPacket?

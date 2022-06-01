@@ -43,7 +43,8 @@ class Frame private constructor(
     }
 
     fun completeFragment(fullData: ByteBuf): Frame {
-        assert(frameData!!.isFragment)
+        val frame = requireNotNull(frameData)
+        require(frame.isFragment)
         val out = createRaw()
         out.reliableIndex = reliableIndex
         out.sequenceIndex = sequenceIndex
@@ -54,8 +55,8 @@ class Frame private constructor(
         return out
     }
 
-    fun fragment(splitID: Int, splitSize: Int, reliableIndex: Int, outList: MutableList<Any?>): Int {
-        var reliableIndex_ = reliableIndex
+    fun fragment(splitID: Int, splitSize: Int, index: Int, outList: MutableList<Any?>): Int {
+        var reliableIndex = index
         val data = requireNotNull(frameData?.createData())
         return try {
             val dataSplitSize = splitSize - HEADER_SIZE
@@ -63,7 +64,7 @@ class Frame private constructor(
             for (splitIndexIterator in 0 until splitCountTotal) {
                 val length = min(dataSplitSize, data.readableBytes())
                 val out = createRaw()
-                out.reliableIndex = reliableIndex_
+                out.reliableIndex = reliableIndex
                 out.sequenceIndex = sequenceIndex
                 out.orderIndex = orderIndex
                 out.splitCount = splitCountTotal
@@ -71,23 +72,25 @@ class Frame private constructor(
                 out.splitIndex = splitIndexIterator
                 out.hasSplit = true
                 out.frameData = FrameData.read(data, length, true)
-                out.frameData!!.orderChannel = orderChannel
-                out.frameData!!.reliability = reliability?.makeReliable() //reliable form only
-                assert(out.frameData!!.isFragment)
+                out.frameData?.orderChannel = orderChannel
+                out.frameData?.reliability = reliability.makeReliable() //reliable form only
+                val frame = requireNotNull(out.frameData)
+                require(frame.isFragment)
                 check(out.roughPacketSize <= splitSize) { "mtu fragment mismatch" }
-                reliableIndex_ = plus(reliableIndex, 1)
+                reliableIndex = plus(index, 1)
                 outList.add(out)
             }
-            assert(!data.isReadable)
+            require(!data.isReadable)
             splitCountTotal
         } finally {
-            data!!.release()
+            data.release()
         }
     }
 
     fun retainedFragmentData(): ByteBuf? {
-        assert(frameData!!.isFragment)
-        return frameData!!.createData()
+        val frame = requireNotNull(frameData)
+        require(frame.isFragment)
+        return frame.createData()
     }
 
     override fun retain(): Frame {
@@ -96,11 +99,11 @@ class Frame private constructor(
 
     override fun deallocate() {
         if (frameData != null) {
-            frameData!!.release()
+            frameData?.release()
             frameData = null
         }
         if (tracker != null) {
-            tracker!!.close(this)
+            tracker?.close(this)
             tracker = null
         }
         promise = null
@@ -108,7 +111,8 @@ class Frame private constructor(
     }
 
     fun retainedFrameData(): FrameData {
-        return frameData!!.retain()
+        val frame = requireNotNull(frameData)
+        return frame.retain()
     }
 
     fun produce(alloc: ByteBufAllocator, out: CompositeByteBuf) {
@@ -116,7 +120,7 @@ class Frame private constructor(
         try {
             writeHeader(header)
             out.addComponent(true, header.retain())
-            out.addComponent(true, frameData!!.createData())
+            out.addComponent(true, frameData?.createData())
         } finally {
             header.release()
         }
@@ -131,7 +135,7 @@ class Frame private constructor(
         val dataSize = requireNotNull(frameData?.dataSize)
         out.writeByte(reliability.code() shl 5 or if (hasSplit) SPLIT_FLAG else 0)
         out.writeShort(dataSize * java.lang.Byte.SIZE)
-        assert(!(hasSplit && !reliability.isReliable))
+        require(!(hasSplit && !reliability.isReliable))
         if (reliability.isReliable) {
             out.writeMediumLE(reliableIndex)
         }
@@ -160,7 +164,7 @@ class Frame private constructor(
     }
 
     val dataSize: Int
-        get() = frameData!!.dataSize
+        get() = frameData?.dataSize ?: 0
     val roughPacketSize: Int
         get() = dataSize + HEADER_SIZE
 
@@ -220,8 +224,8 @@ class Frame private constructor(
                     out.hasSplit = true
                 }
                 out.frameData = FrameData.read(buf, length, hasSplit)
-                out.frameData!!.reliability = reliability
-                out.frameData!!.orderChannel = orderChannel
+                out.frameData?.reliability = reliability
+                out.frameData?.orderChannel = orderChannel
                 out.retain()
             } finally {
                 out.release()
@@ -229,14 +233,16 @@ class Frame private constructor(
         }
 
         fun create(packet: FrameData): Frame {
-            require(!packet.reliability!!.isOrdered) { "Must provided indices for ordered data." }
+            val reliability = requireNotNull(packet.reliability)
+            require(!reliability.isOrdered) { "Must provided indices for ordered data." }
             val out = createRaw()
             out.frameData = packet.retain()
             return out
         }
 
         fun createOrdered(packet: FrameData, orderIndex: Int, sequenceIndex: Int): Frame {
-            require(packet.reliability!!.isOrdered) { "No indices needed for non-ordered data." }
+            val reliability = requireNotNull(packet.reliability)
+            require(reliability.isOrdered) { "No indices needed for non-ordered data." }
             val out = createRaw()
             out.frameData = packet.retain()
             out.orderIndex = orderIndex
@@ -246,10 +252,10 @@ class Frame private constructor(
 
         private fun createRaw(): Frame {
             val out = recycler.get()
-            assert(out.refCnt() == 0)
-            assert(out.tracker == null)
-            assert(out.frameData == null)
-            assert(out.promise == null)
+            require(out.refCnt() == 0)
+            require(out.tracker == null)
+            require(out.frameData == null)
+            require(out.promise == null)
             out.hasSplit = false
             out.splitIndex = 0
             out.splitId = out.splitIndex

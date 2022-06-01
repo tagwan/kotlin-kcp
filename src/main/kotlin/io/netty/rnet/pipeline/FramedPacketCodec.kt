@@ -9,16 +9,21 @@ import io.netty.rnet.packet.FramedPacket
 
 @Sharable
 class FramedPacketCodec : MessageToMessageCodec<FrameData?, FramedPacket?>() {
-    override fun encode(ctx: ChannelHandlerContext, `in`: FramedPacket?, out: MutableList<Any>) {
-        out.add(config(ctx).codec.encode(`in`, ctx.alloc())!!)
+
+    override fun encode(ctx: ChannelHandlerContext, inMsg: FramedPacket?, out: MutableList<Any>) {
+        val msg = requireNotNull(inMsg)
+        out.add(config(ctx).codec.encode(msg, ctx.alloc()))
     }
 
-    override fun decode(ctx: ChannelHandlerContext, `in`: FrameData?, out: MutableList<Any>) {
-        out.add(config(ctx).codec.decode(`in`)!!)
+    override fun decode(ctx: ChannelHandlerContext, inMsg: FrameData?, out: MutableList<Any>) {
+        val codec = config(ctx).codec
+        val packet = codec.decode(requireNotNull(inMsg))
+        out.add(requireNotNull(packet))
     }
 
     companion object {
         const val NAME = "rn-framed-codec"
         val INSTANCE = FramedPacketCodec()
     }
+
 }

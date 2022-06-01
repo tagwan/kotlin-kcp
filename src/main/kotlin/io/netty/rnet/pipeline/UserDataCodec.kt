@@ -18,7 +18,7 @@ class UserDataCodec(private val packetId: Int) : MessageToMessageCodec<FrameData
     }
 
     override fun decode(ctx: ChannelHandlerContext, packet: FrameData, out: MutableList<Any>) {
-        assert(!packet.isFragment)
+        require(!packet.isFragment)
         if (packet.dataSize > 0) {
             if (packetId == packet.packetId) {
                 out.add(packet.createData()!!.skipBytes(1))

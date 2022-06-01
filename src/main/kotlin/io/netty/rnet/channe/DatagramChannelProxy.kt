@@ -1,4 +1,4 @@
-package io.netty.rnet.channel
+package io.netty.rnet.channe
 
 import io.netty.buffer.ByteBufAllocator
 import io.netty.channel.*
@@ -272,7 +272,7 @@ open class DatagramChannelProxy(
 
     protected inner class ListnerOutboundProxy : ChannelOutboundHandler {
         override fun handlerAdded(ctx: ChannelHandlerContext) {
-            assert(listener.eventLoop().inEventLoop())
+            require(listener.eventLoop().inEventLoop())
         }
 
         override fun bind(
@@ -335,7 +335,7 @@ open class DatagramChannelProxy(
         }
 
         override fun handlerAdded(ctx: ChannelHandlerContext) {
-            assert(listener.eventLoop().inEventLoop())
+            require(listener.eventLoop().inEventLoop())
         }
 
         override fun channelActive(ctx: ChannelHandlerContext) {

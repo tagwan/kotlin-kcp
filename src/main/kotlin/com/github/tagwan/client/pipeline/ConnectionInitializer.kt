@@ -25,7 +25,7 @@ class ConnectionInitializer(
                     config.serverId = cr1.serverId
                     state = State.CR2
                 } else if (msg is InvalidVersion) {
-                    fail(InvalidVersion.InvalidVersionException)
+                    InvalidVersion.InvalidVersionException.fail()
                 }
             }
             State.CR2 -> {
@@ -38,7 +38,7 @@ class ConnectionInitializer(
                     val packet: Packet = ConnectionRequest(config.clientId)
                     ctx.writeAndFlush(packet).addListener(RakNet.INTERNAL_WRITE_LISTENER)
                 } else if (msg is ConnectionFailed) {
-                    fail(ChannelException("RakNet connection failed"))
+                    ChannelException("RakNet connection failed").fail()
                 }
             }
             State.CR3 -> {

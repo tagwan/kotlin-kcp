@@ -7,10 +7,11 @@ import io.netty.rnet.frame.Frame
 import io.netty.rnet.packet.FramedPacket
 import io.netty.rnet.utils.UINT.B3.plus
 
-class FrameOrderOut : MessageToMessageEncoder<FramedPacket?>() {
+class FrameOrderOut : MessageToMessageEncoder<FramedPacket>() {
     protected var nextOrderIndex = IntArray(8)
     protected var nextSequenceIndex = IntArray(8)
-    override fun encode(ctx: ChannelHandlerContext, packet: FramedPacket?, list: MutableList<Any>) {
+
+    override fun encode(ctx: ChannelHandlerContext, packet: FramedPacket, list: MutableList<Any>) {
         val config = config(ctx)
         val data = config.codec.encode(packet, ctx.alloc())
         try {

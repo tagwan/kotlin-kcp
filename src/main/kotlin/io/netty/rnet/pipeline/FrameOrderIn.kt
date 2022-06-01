@@ -6,9 +6,9 @@ import io.netty.util.ReferenceCountUtil
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import io.netty.rnet.frame.Frame
 import io.netty.rnet.packet.FramedPacket
-import io.netty.rnet.utils.Constants.packetLossCheck
 import io.netty.rnet.utils.UINT.B3.minusWrap
 import io.netty.rnet.utils.UINT.B3.plus
+import io.netty.rnet.utils.checkPacketLoss
 import java.util.*
 import java.util.function.Consumer
 
@@ -58,7 +58,7 @@ class FrameOrderIn : MessageToMessageDecoder<Frame>() {
 
         fun decodeOrdered(frame: Frame, list: MutableList<Any>) {
             val indexDiff = minusWrap(frame.orderIndex, lastOrderIndex)
-            packetLossCheck(indexDiff, "ordered difference")
+            checkPacketLoss(indexDiff) {"ordered difference"}
             if (indexDiff == 1) { //got next packet in line
                 var data: FramedPacket = frame.retainedFrameData()
                 do { //process this packet, and any queued packets following in sequence
@@ -70,7 +70,7 @@ class FrameOrderIn : MessageToMessageDecoder<Frame>() {
                 // only new future data goes in the queue
                 queue.put(frame.orderIndex, frame.retainedFrameData())
             }
-            packetLossCheck(queue.size, "missed ordered packets")
+            checkPacketLoss(queue.size) {"missed ordered packets"}
         }
 
         fun clear() {

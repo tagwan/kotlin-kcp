@@ -34,14 +34,10 @@ class FrameData private constructor(
     }
 
     override fun deallocate() {
-        if (data != null) {
-            data?.release()
-            data = null
-        }
-        if (tracker != null) {
-            tracker?.close(this)
-            tracker = null
-        }
+        data?.release()
+        data = null
+        tracker?.close(this)
+        tracker = null
         handle.recycle(this)
     }
 
@@ -54,20 +50,19 @@ class FrameData private constructor(
     }
 
     override fun touch(hint: Any): ReferenceCounted {
-        if (tracker != null) {
-            tracker!!.record(hint)
-        }
-        data!!.touch(hint)
+        tracker?.record(hint)
+        data?.touch(hint)
         return this
     }
 
     val packetId: Int
         get() {
-            assert(!isFragment)
-            return data!!.getUnsignedByte(data!!.readerIndex()).toInt()
+            require(!isFragment)
+            val d = requireNotNull(data)
+            return d.getUnsignedByte(d.readerIndex()).toInt()
         }
     val dataSize: Int
-        get() = data!!.readableBytes()
+        get() = requireNotNull(data).readableBytes()
 
     companion object {
         private val leakDetector = ResourceLeakDetectorFactory.instance().newResourceLeakDetector(
@@ -81,7 +76,7 @@ class FrameData private constructor(
 
         private fun createRaw(): FrameData {
             val out = recycler.get()
-            assert(out.refCnt() == 0 && out.tracker == null) { "bad reuse" }
+            require(out.refCnt() == 0 && out.tracker == null) { "bad reuse" }
             out.orderChannel = 0
             out.isFragment = false
             out.data = null
@@ -103,12 +98,12 @@ class FrameData private constructor(
         }
 
         fun read(buf: ByteBuf, length: Int, fragment: Boolean): FrameData {
-            assert(length > 0)
+            require(length > 0)
             val packet = createRaw()
             return try {
                 packet.data = buf.readRetainedSlice(length)
                 packet.isFragment = fragment
-                assert(packet.dataSize == length)
+                require(packet.dataSize == length)
                 packet.retain()
             } finally {
                 packet.release()

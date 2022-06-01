@@ -16,7 +16,7 @@ class FlushTickHandler : ChannelDuplexHandler() {
     protected var lastTickAccum = System.nanoTime()
     protected var flushTask: ScheduledFuture<*>? = null
     override fun handlerAdded(ctx: ChannelHandlerContext) {
-        assert(flushTask == null)
+        require(flushTask == null)
         flushTask = ctx.channel().eventLoop().scheduleAtFixedRate(
             { checkFlushTick(ctx.channel()) },
             0, 50, TimeUnit.MILLISECONDS

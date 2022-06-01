@@ -22,83 +22,38 @@ class DefaultCodec : RakNet.Codec {
     protected val framedPacketIds = IntOpenHashSet()
 
     init {
-        //       ID                         Class                       Decoder                     Encoder
-        register(PING, ::Ping)
-        register(UNCONNECTED_PING, ::UnconnectedPing)
-        register(PONG, ::Pong)
-        register(
-            OPEN_CONNECTION_REQUEST_1,
-            ConnectionRequest1::class.java
-        ) { ConnectionRequest1() }
-        register(
-            OPEN_CONNECTION_REPLY_1,
-            ConnectionReply1::class.java
-        ) { ConnectionReply1() }
-        register(
-            OPEN_CONNECTION_REQUEST_2,
-            ConnectionRequest2::class.java
-        ) { ConnectionRequest2() }
-        register(
-            OPEN_CONNECTION_REPLY_2,
-            ConnectionReply2::class.java
-        ) { ConnectionReply2() }
-        register(
-            CONNECTION_REQUEST,
-            ConnectionRequest::class.java
-        ) { ConnectionRequest() }
-        register(
-            SERVER_HANDSHAKE,
-            ServerHandshake::class.java
-        ) { ServerHandshake() }
-        register(
-            CONNECTION_FAILED,
-            ConnectionFailed::class.java,
-            ::ConnectionFailed
-        )
-        register(
-            ALREADY_CONNECTED,
-            AlreadyConnected::class.java, ::AlreadyConnected
-        )
-        register(CLIENT_HANDSHAKE, ClientHandshake::class.java, { ClientHandshake() })
-        register(
-            NO_FREE_CONNECTIONS,
-            NoFreeConnections::class.java,
-            { NoFreeConnections() })
-        register(
-            CLIENT_DISCONNECT,
-            Disconnect::class.java,
-            Supplier { Disconnect() })
-        register(
-            CONNECTION_BANNED,
-            ConnectionBanned::class.java,
-            { ConnectionBanned() })
-        register(
-            INVALID_VERSION,
-            InvalidVersion::class.java,
-            { InvalidVersion() })
-        register(
-            UNCONNECTED_PONG,
-            UnconnectedPong::class.java,
-            { UnconnectedPong() })
+        //  ID                              Decoder                     Encoder
+        register(PING,                      ::Ping)
+        register(UNCONNECTED_PING,          ::UnconnectedPing)
+        register(PONG,                      ::Pong)
+        register(OPEN_CONNECTION_REQUEST_1, ::ConnectionRequest1)
+        register(OPEN_CONNECTION_REPLY_1,   ::ConnectionReply1)
+        register(OPEN_CONNECTION_REQUEST_2, ::ConnectionRequest2)
+        register(OPEN_CONNECTION_REPLY_2,   ::ConnectionReply2)
+        register(CONNECTION_REQUEST,        ::ConnectionRequest)
+        register(SERVER_HANDSHAKE,          ::ServerHandshake)
+        register(CONNECTION_FAILED,         ::ConnectionFailed)
+        register(ALREADY_CONNECTED,         ::AlreadyConnected)
+        register(CLIENT_HANDSHAKE,          ::ClientHandshake)
+        register(NO_FREE_CONNECTIONS,       ::NoFreeConnections)
+        register(CLIENT_DISCONNECT,         ::Disconnect)
+        register(CONNECTION_BANNED,         ::ConnectionBanned)
+        register(INVALID_VERSION,           ::InvalidVersion)
+        register(UNCONNECTED_PONG,          ::UnconnectedPong)
 
-        for (i in FRAME_DATA_START..FRAME_DATA_END) register(
-            i, FrameSet::class.java, FrameSet::read
-        ) { obj: FrameSet, out: ByteBuf ->
-            obj.write(
-                out
-            )
-        }
+        for (i in FRAME_DATA_START..FRAME_DATA_END)
+            register(i,                     FrameSet::read,         FrameSet::write)
 
-        register(NACK, ::NACK)
-        register(ACK, ::ACK)
+        register(NACK,                      ::NACK)
+        register(ACK,                       ::ACK)
         idFromClass.defaultReturnValue(-1)
     }
 
-    override fun encode(packet: FramedPacket?, alloc: ByteBufAllocator?): FrameData? {
+    override fun encode(packet: FramedPacket, alloc: ByteBufAllocator): FrameData {
         if (packet is FrameData) {
             return packet.retain()
         }
-        val out = alloc!!.ioBuffer(packet!!.sizeHint())
+        val out = alloc.ioBuffer(packet.sizeHint())
         return try {
             encode(packet, out)
             val frameData = FrameData.read(out, out.readableBytes(), false)
@@ -110,8 +65,8 @@ class DefaultCodec : RakNet.Codec {
         }
     }
 
-    override fun encode(packet: Packet?, out: ByteBuf?) {
-        require(idFromClass.containsKey(packet!!.javaClass)) { "Unknown encoder for " + packet.javaClass }
+    override fun encode(packet: Packet, out: ByteBuf) {
+        require(idFromClass.containsKey(packet.javaClass)) { "Unknown encoder for " + packet.javaClass }
         val packetId = packetIdFor(packet.javaClass)
         val encoder = encoders[packetId] as BiConsumer<Packet?, ByteBuf?>
         encoder.accept(packet, out)
@@ -158,34 +113,12 @@ class DefaultCodec : RakNet.Codec {
     }
 
     ///// REGISTRY /////
-//    protected fun <T : SimplePacket> register(id: Int, clz: Class<T>, cons: Supplier<T>) {
-//        register(id, clz, decodeSimple(cons), encodeSimple<T>(id))
-//    }
-
-
     protected inline fun <reified T : SimplePacket> register(id: Int, cons: Supplier<T>) {
-        register(id, T::class.java, decodeSimple(cons), encodeSimple(id))
-    }
-
-    protected inline fun <reified T : SimplePacket> register(id: Int, clz: Class<T>, cons: Supplier<T>) {
-        register(id, clz, decodeSimple(cons), encodeSimple(id))
+        this.register(id, decodeSimple(cons), encodeSimple(id))
     }
 
     protected inline fun <reified T : Packet> register(
-        id: Int, clz: Class<out Packet>,
-        decoder: Function<ByteBuf, T>, encoder: BiConsumer<T, ByteBuf>
-    ) {
-        idFromClass.put(clz, id)
-        decoders.put(id, decoder)
-        encoders.put(id, encoder)
-        if (FramedPacket::class.java.isAssignableFrom(clz)) {
-            framedPacketIds.add(id)
-        }
-    }
-
-    protected inline fun <reified T : Packet> register(
-        id: Int,
-        decoder: Function<ByteBuf, T>, encoder: BiConsumer<T, ByteBuf>
+        id: Int, decoder: Function<ByteBuf, T>, encoder: BiConsumer<T, ByteBuf>
     ) {
         idFromClass.put(T::class.java, id)
         decoders.put(id, decoder)
@@ -195,21 +128,8 @@ class DefaultCodec : RakNet.Codec {
         }
     }
 
-
-//    protected fun <T : Packet> register(
-//        id: Int, clz: Class<out Packet>,
-//        decoder: Function<ByteBuf, T>, encoder: BiConsumer<T, ByteBuf>
-//    ) {
-//        idFromClass.put(clz, id)
-//        decoders.put(id, decoder)
-//        encoders.put(id, encoder)
-//        if (FramedPacket::class.java.isAssignableFrom(clz)) {
-//            framedPacketIds.add(id)
-//        }
-//    }
-
     protected fun <T : SimplePacket> decodeSimple(cons: Supplier<T>): Function<ByteBuf, T> {
-        return Function { buf: ByteBuf ->
+        return Function { buf ->
             val inst = cons.get()
             buf.skipBytes(1)
             inst.decode(buf)

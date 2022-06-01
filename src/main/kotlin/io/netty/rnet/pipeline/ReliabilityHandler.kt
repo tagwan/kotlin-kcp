@@ -19,10 +19,10 @@ import io.netty.rnet.frame.Frame
 import io.netty.rnet.packet.FrameSet
 import io.netty.rnet.packet.Reliability.*
 import io.netty.rnet.pipeline.FlushTickHandler.MissedFlushes
-import io.netty.rnet.utils.Constants.packetLossCheck
 import io.netty.rnet.utils.UINT
 import io.netty.rnet.utils.UINT.B3.minusWrap
 import io.netty.rnet.utils.UINT.B3.plus
+import io.netty.rnet.utils.checkPacketLoss
 import java.util.function.Consumer
 import kotlin.math.max
 import kotlin.math.min
@@ -51,13 +51,12 @@ class ReliabilityHandler : ChannelDuplexHandler() {
 
     override fun write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise) {
         if (msg is Frame) {
-            val frame = msg
-            queueFrame(frame)
-            frame.promise = promise
+            queueFrame(msg)
+            msg.promise = promise
         } else {
             ctx.write(msg, promise)
         }
-        packetLossCheck(pendingFrameSets.size, "unconfirmed sent packets")
+        checkPacketLoss(pendingFrameSets.size) { "unconfirmed sent packets" }
         FlushTickHandler.checkFlushTick(ctx.channel())
     }
 
@@ -72,7 +71,7 @@ class ReliabilityHandler : ChannelDuplexHandler() {
         updateBurstTokens(1)
         produceFrameSets(ctx)
         updateBackPressure(ctx)
-        packetLossCheck(pendingFrameSets.size, "resend queue")
+        checkPacketLoss(pendingFrameSets.size) { "resend queue" }
         ctx.flush()
     }
 
@@ -150,7 +149,7 @@ class ReliabilityHandler : ChannelDuplexHandler() {
                     frameSet.succeed()
                     frameSet.release()
                 }
-                packetLossCheck(nIterations++, "ack confirm range")
+                checkPacketLoss(nIterations++) { "ack confirm range" }
                 id = plus(id, 1)
             }
         }
@@ -169,7 +168,7 @@ class ReliabilityHandler : ChannelDuplexHandler() {
                     bytesNACKd += frameSet.roughSize
                     recallFrameSet(frameSet)
                 }
-                packetLossCheck(nIterations++, "nack confirm range")
+                checkPacketLoss(nIterations++) { "nack confirm range" }
                 id = plus(id, 1)
             }
         }
@@ -241,7 +240,7 @@ class ReliabilityHandler : ChannelDuplexHandler() {
         val frameSet = FrameSet.create()
         while (itr.hasNext()) {
             val frame = itr.next()
-            assert(frame!!.refCnt() > 0) { "Frame has lost reference" }
+            require(frame!!.refCnt() > 0) { "Frame has lost reference" }
             if (frameSet.roughSize + frame.roughPacketSize > maxSize) {
                 if (frameSet.isEmpty) {
                     throw CorruptedFrameException(
@@ -261,7 +260,7 @@ class ReliabilityHandler : ChannelDuplexHandler() {
             ctx.write(frameSet.retain()).addListener(RakNet.INTERNAL_WRITE_LISTENER)
             config!!.metrics.packetsOut(1)
             config!!.metrics.framesOut(frameSet.numPackets)
-            assert(frameSet.refCnt() > 0)
+            require(frameSet.refCnt() > 0)
         } else {
             frameSet.release()
         }

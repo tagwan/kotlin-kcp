@@ -34,10 +34,8 @@ class FrameSet private constructor(
     override fun deallocate() {
         frames.forEach(Consumer { obj: Frame -> obj.release() })
         frames.clear()
-        if (tracker != null) {
-            tracker!!.close(this)
-            tracker = null
-        }
+        tracker?.close(this)
+        tracker = null
         handle.recycle(this)
     }
 
@@ -149,8 +147,8 @@ class FrameSet private constructor(
 
         fun create(): FrameSet {
             val out = recycler.get()
-            assert(out.refCnt() == 0)
-            assert(out.tracker == null)
+            require(out.refCnt() == 0)
+            require(out.tracker == null)
             out.sentTime = System.nanoTime()
             out.seqId = 0
             out.tracker = leakDetector.track(out)

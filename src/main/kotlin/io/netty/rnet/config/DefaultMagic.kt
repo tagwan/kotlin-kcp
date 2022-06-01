@@ -9,12 +9,12 @@ class DefaultMagic(  //TODO: static cache?
     protected val magicData: ByteArray
 ) : Magic {
     override fun write(buf: ByteBuf?) {
-        buf!!.writeBytes(magicData)
+        buf?.writeBytes(magicData)
     }
 
     override fun read(buf: ByteBuf?) {
         for (b in magicData) {
-            if (buf!!.readByte() != b) {
+            if (buf?.readByte() != b) {
                 throw MagicMismatchException()
             }
         }
@@ -23,7 +23,7 @@ class DefaultMagic(  //TODO: static cache?
     override fun verify(other: Magic?) {
         val tmp = Unpooled.buffer(16)
         write(tmp)
-        other!!.read(tmp)
+        other?.read(tmp)
     }
 
     companion object {

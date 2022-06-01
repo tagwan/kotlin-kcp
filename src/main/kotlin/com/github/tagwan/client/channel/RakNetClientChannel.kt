@@ -10,7 +10,7 @@ import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.PromiseCombiner
 import io.netty.rnet.WRITABLE
-import io.netty.rnet.channel.DatagramChannelProxy
+import io.netty.rnet.channe.DatagramChannelProxy
 import io.netty.rnet.pipeline.AbstractConnectionInitializer
 import java.net.InetSocketAddress
 import java.net.SocketAddress

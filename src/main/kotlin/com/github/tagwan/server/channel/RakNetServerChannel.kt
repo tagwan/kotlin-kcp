@@ -8,7 +8,7 @@ import io.netty.util.ReferenceCountUtil
 import io.netty.util.concurrent.Future
 import io.netty.util.concurrent.PromiseCombiner
 import io.netty.rnet.SERVER_ID
-import io.netty.rnet.channel.DatagramChannelProxy
+import io.netty.rnet.channe.DatagramChannelProxy
 import io.netty.rnet.packet.NoFreeConnections
 import io.netty.rnet.packet.Packet
 import com.github.tagwan.server.RakNetServer
@@ -18,6 +18,7 @@ import java.util.function.Consumer
 import java.util.function.Supplier
 
 class RakNetServerChannel : DatagramChannelProxy, ServerChannel {
+
     protected val childMap: MutableMap<SocketAddress, Channel> = HashMap()
 
     constructor(ioChannelSupplier: Supplier<out DatagramChannel?>?) : super(

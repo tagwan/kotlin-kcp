@@ -11,36 +11,41 @@ import io.netty.rnet.packet.ConnectionFailed
 import io.netty.rnet.packet.Packet
 import java.util.concurrent.TimeUnit
 
-abstract class AbstractConnectionInitializer(protected val connectPromise: ChannelPromise) :
-    SimpleChannelInboundHandler<Packet?>() {
+abstract class AbstractConnectionInitializer(
+    protected val connectPromise: ChannelPromise
+) : SimpleChannelInboundHandler<Packet>() {
+
     protected var state = State.CR1
     protected var sendTimer: ScheduledFuture<*>? = null
     protected var connectTimer: ScheduledFuture<*>? = null
+
     protected abstract fun sendRequest(ctx: ChannelHandlerContext)
+
     protected abstract fun removeHandler(ctx: ChannelHandlerContext)
+
     override fun handlerAdded(ctx: ChannelHandlerContext) {
-        sendTimer = ctx.channel().eventLoop().scheduleAtFixedRate(
-            { sendRequest(ctx) },
+        val channel = ctx.channel()
+        val eventLoop = channel.eventLoop()
+        sendTimer = eventLoop.scheduleAtFixedRate(
+            { this.sendRequest(ctx) },
             0, 200, TimeUnit.MILLISECONDS
         )
-        connectTimer = ctx.channel().eventLoop().schedule(
-            { doTimeout() },
-            ctx.channel().config().connectTimeoutMillis.toLong(), TimeUnit.MILLISECONDS
+        connectTimer = eventLoop.schedule(
+            ::doTimeout,
+            channel.config().connectTimeoutMillis.toLong(), TimeUnit.MILLISECONDS
         )
-        sendRequest(ctx)
+        this.sendRequest(ctx)
     }
 
     override fun handlerRemoved(ctx: ChannelHandlerContext) {
-        sendTimer!!.cancel(false)
-        connectTimer!!.cancel(false)
+        sendTimer?.cancel(false)
+        connectTimer?.cancel(false)
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
         val config = config(ctx)
-        ctx.writeAndFlush(ConnectionFailed(config.magic)).addListener { v: Future<in Void?>? ->
-            fail(
-                cause
-            )
+        ctx.writeAndFlush(ConnectionFailed(config.magic)).addListener { _ ->
+            cause.fail()
         }
     }
 
@@ -55,19 +60,19 @@ abstract class AbstractConnectionInitializer(protected val connectPromise: Chann
         channel.pipeline().fireChannelActive()
     }
 
-    protected fun fail(cause: Throwable?) {
-        connectPromise.tryFailure(cause)
+    protected fun Throwable.fail() {
+        connectPromise.tryFailure(this@fail)
     }
 
     protected fun doTimeout() {
-        fail(ConnectTimeoutException())
+        ConnectTimeoutException().fail()
     }
 
-    protected enum class State {
+    enum class State {
         CR1,  //Raw: ConnectionRequest1 -> ConnectionReply1, InvalidVersion
         CR2,  //Raw: ConnectionRequest2 -> ConnectionReply2, ConnectionFailed
-        CR3
-        //Framed: ConnectionRequest -> Handshake -> ClientHandshake
+        CR3,  //Framed: ConnectionRequest -> Handshake -> ClientHandshake
+        ;
     }
 
     companion object {

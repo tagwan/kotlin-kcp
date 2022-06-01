@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import io.netty.rnet.RakNet.config
 import io.netty.rnet.frame.Frame
 import io.netty.rnet.packet.ReliabilityType
-import io.netty.rnet.utils.Constants.packetLossCheck
+import io.netty.rnet.utils.checkPacketLoss
 import java.util.function.Consumer
 
 class FrameJoiner : MessageToMessageDecoder<Frame>() {
@@ -36,7 +36,7 @@ class FrameJoiner : MessageToMessageDecoder<Frame>() {
             if (totalSize > config(ctx).maxQueuedBytes) {
                 throw TooLongFrameException("Fragmented frame too large")
             } else if (partial == null) {
-                packetLossCheck(frame.splitCount, "frame join elements")
+                checkPacketLoss(frame.splitCount) { "frame join elements" }
                 pendingPackets.put(splitID, Builder.create(ctx.alloc(), frame))
             } else {
                 partial.add(frame)
@@ -45,7 +45,7 @@ class FrameJoiner : MessageToMessageDecoder<Frame>() {
                     list.add(partial.finish())
                 }
             }
-            packetLossCheck(pendingPackets.size, "pending frame joins")
+            checkPacketLoss(pendingPackets.size) { "pending frame joins" }
         }
     }
 
@@ -62,7 +62,7 @@ class FrameJoiner : MessageToMessageDecoder<Frame>() {
         }
 
         fun init(alloc: ByteBufAllocator, packet: Frame) {
-            assert(data == null)
+            require(data == null)
             splitIdx = 0
             data = alloc.compositeDirectBuffer(packet.splitCount)
             orderId = packet.orderChannel
@@ -72,29 +72,30 @@ class FrameJoiner : MessageToMessageDecoder<Frame>() {
         }
 
         fun add(packet: Frame) {
-            assert(packet.reliability == samplePacket!!.reliability)
-            assert(packet.orderChannel == samplePacket!!.orderChannel)
-            assert(packet.orderIndex == samplePacket!!.orderIndex)
+            require(packet.reliability == samplePacket!!.reliability)
+            require(packet.orderChannel == samplePacket!!.orderChannel)
+            require(packet.orderIndex == samplePacket!!.orderIndex)
             if (!queue.containsKey(packet.splitIndex) && packet.splitIndex >= splitIdx) {
                 queue.put(packet.splitIndex, packet.retainedFragmentData())
                 update()
             }
-            packetLossCheck(queue.size, "packet defragment queue")
+            checkPacketLoss(queue.size) { "packet defragment queue" }
         }
 
         fun update() {
             var fragment: ByteBuf?
             while (queue.remove(splitIdx).also { fragment = it } != null) {
-                data!!.addComponent(true, fragment)
+                data?.addComponent(true, fragment)
                 splitIdx++
             }
         }
 
         fun finish(): Frame {
-            assert(isDone)
-            assert(queue.isEmpty())
+            require(isDone)
+            require(queue.isEmpty())
+            val sp = requireNotNull(samplePacket)
             return try {
-                samplePacket!!.completeFragment(data!!)
+                sp.completeFragment(requireNotNull(data))
             } finally {
                 release()
             }
@@ -102,20 +103,16 @@ class FrameJoiner : MessageToMessageDecoder<Frame>() {
 
         val isDone: Boolean
             get() {
-                assert(samplePacket!!.splitCount >= splitIdx)
+                require(samplePacket!!.splitCount >= splitIdx)
                 return samplePacket!!.splitCount == splitIdx
             }
 
         fun release() {
-            if (data != null) {
-                data!!.release()
-                data = null
-            }
-            if (samplePacket != null) {
-                samplePacket!!.release()
-                samplePacket = null
-            }
-            queue.values.forEach(Consumer { msg: ByteBuf? -> ReferenceCountUtil.release(msg) })
+            data?.release()
+            data = null
+            samplePacket?.release()
+            samplePacket = null
+            queue.values.forEach(ReferenceCountUtil::release)
             queue.clear()
         }
 

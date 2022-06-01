@@ -35,7 +35,9 @@ open class Reliability : SimplePacket, Packet {
     override fun encode(buf: ByteBuf) {
         buf.writeShort(entries.size)
         for (entry in entries) {
-            if (entry!!.idStart == entry.idFinish) {
+            if (entry == null)
+                continue
+            if (entry.idStart == entry.idFinish) {
                 buf.writeBoolean(true)
                 buf.writeMediumLE(entry.idStart)
             } else {

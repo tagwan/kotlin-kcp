@@ -43,7 +43,7 @@ enum class ReliabilityType(
 
     companion object {
         operator fun get(code: Int): ReliabilityType {
-            assert(code >= 0 && code < values().size)
+            require(code >= 0 && code < values().size)
             return values()[code]
         }
     }
