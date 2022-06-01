@@ -20,12 +20,13 @@ class UdpServerHandler : SimpleChannelInboundHandler<DatagramPacket>() {
 
     /**
      * DatagramPacket 是消息容器，这个消息容器被 DatagramChannel使用
+     * <p>
+     *     1.通过content()来获取消息内容
+     *     2.通过sender();来获取发送者的消息
+     *     3.通过recipient();来获取接收者的消息
      *
-     * 1.通过content()来获取消息内容
-     *
-     * 2.通过sender();来获取发送者的消息
-     *
-     * 3.通过recipient();来获取接收者的消息
+     * @param ctx
+     * @param msg
      */
     @Throws(Exception::class)
     override fun channelRead0(ctx: ChannelHandlerContext, msg: DatagramPacket) {
@@ -38,7 +39,7 @@ class UdpServerHandler : SimpleChannelInboundHandler<DatagramPacket>() {
             kcpMap[sender] = kcp(conv, ctx.channel(), sender)
             kcp = kcpMap[sender]
         }
-        kcp!!.input(content)
+        kcp?.input(content)
     }
 
     @Throws(Exception::class)
